@@ -29,6 +29,16 @@ function getAlertConfig(): AlertConfig {
   return { enabled: false, receiveAgent: "main", rules: [], lastAlerts: {} };
 }
 
+function getOpenclawConfig() {
+  const configPath = path.join(OPENCLAW_HOME, "openclaw.json");
+  try {
+    const raw = fs.readFileSync(configPath, "utf-8");
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
 function saveAlertConfig(config: AlertConfig): void {
   fs.writeFileSync(ALERTS_CONFIG_PATH, JSON.stringify(config, null, 2));
 }
@@ -41,19 +51,146 @@ function getGatewayConfig() {
     return {
       port: config.gateway?.port || 18789,
       token: config.gateway?.auth?.token || "",
+      feishu: config.channels?.feishu || {},
     };
   } catch {
-    return { port: 18789, token: "" };
+    return { port: 18789, token: "", feishu: {} };
   }
 }
 
-// 发送告警消息到 agent (fire and forget)
+// 获取 agent 对应的飞书账号配置
+function getFeishuAccountForAgent(agentId: string, feishuConfig: any, bindings: any[]): { appId: string; appSecret: string; accountId: string } | null {
+  const feishuAccounts = feishuConfig.accounts || {};
+  
+  // 查找显式绑定
+  const feishuBinding = bindings.find((b: any) => b.agentId === agentId && b.match?.channel === "feishu");
+  if (feishuBinding) {
+    const accountId = feishuBinding.match?.accountId || agentId;
+    const account = feishuAccounts[accountId];
+    if (account?.appId && account?.appSecret) {
+      return { appId: account.appId, appSecret: account.appSecret, accountId };
+    }
+  }
+  
+  // 检查是否有同名账号
+  if (feishuAccounts[agentId]) {
+    const account = feishuAccounts[agentId];
+    if (account?.appId && account?.appSecret) {
+      return { appId: account.appId, appSecret: account.appSecret, accountId: agentId };
+    }
+  }
+  
+  // main agent fallback
+  if (agentId === "main" && feishuConfig.enabled && feishuConfig.appId && feishuConfig.appSecret) {
+    return { appId: feishuConfig.appId, appSecret: feishuConfig.appSecret, accountId: "main" };
+  }
+  
+  return null;
+}
+
+// 获取 agent 最近的发过消息的飞书用户
+function getFeishuDmUser(agentId: string): string | null {
+  try {
+    const sessionsPath = path.join(OPENCLAW_HOME, `agents/${agentId}/sessions/sessions.json`);
+    const raw = fs.readFileSync(sessionsPath, "utf-8");
+    const sessions = JSON.parse(raw);
+    let bestId: string | null = null;
+    let bestTime = 0;
+    for (const [key, val] of Object.entries(sessions)) {
+      const m = key.match(/^agent:[^:]+:feishu:direct:(ou_[a-f0-9]+)$/);
+      if (m) {
+        const updatedAt = (val as any).updatedAt || 0;
+        if (updatedAt > bestTime) {
+          bestTime = updatedAt;
+          bestId = m[1];
+        }
+      }
+    }
+    return bestId;
+  } catch {
+    return null;
+  }
+}
+
+// 通过飞书 API 发送告警消息
+async function sendAlertViaFeishu(agentId: string, message: string) {
+  const openclawConfig = getOpenclawConfig();
+  const feishuConfig = openclawConfig.channels?.feishu || {};
+  const bindings = openclawConfig.bindings || [];
+  
+  const account = getFeishuAccountForAgent(agentId, feishuConfig, bindings);
+  if (!account) {
+    console.log(`[ALERT] No Feishu account found for agent ${agentId}`);
+    return { sent: false, error: "No Feishu account" };
+  }
+  
+  const testUserId = getFeishuDmUser(agentId);
+  if (!testUserId) {
+    console.log(`[ALERT] No Feishu DM user found for agent ${agentId}`);
+    return { sent: false, error: "No DM user" };
+  }
+  
+  const baseUrl = (feishuConfig.domain === "lark") ? "https://open.larksuite.com" : "https://open.feishu.cn";
+  
+  try {
+    // 获取 tenant_access_token
+    const tokenResp = await fetch(`${baseUrl}/open-apis/auth/v3/tenant_access_token/internal`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ app_id: account.appId, app_secret: account.appSecret }),
+      signal: AbortSignal.timeout(10000),
+    });
+    
+    const tokenData = await tokenResp.json();
+    if (tokenData.code !== 0 || !tokenData.tenant_access_token) {
+      return { sent: false, error: `Token failed: ${tokenData.msg}` };
+    }
+    
+    const token = tokenData.tenant_access_token;
+    
+    // 发送 DM
+    const now = new Date().toLocaleTimeString("zh-CN", { timeZone: "Asia/Shanghai" });
+    const msgResp = await fetch(`${baseUrl}/open-apis/im/v1/messages?receive_id_type=open_id`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        receive_id: testUserId,
+        msg_type: "text",
+        content: JSON.stringify({ text: `🔔 告警通知\n${message}\n(${now})` }),
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    
+    const msgData = await msgResp.json();
+    
+    if (msgData.code === 0) {
+      console.log(`[ALERT] Sent to ${agentId}: ${message}`);
+      return { sent: true, message };
+    } else {
+      return { sent: false, error: msgData.msg };
+    }
+  } catch (err: any) {
+    return { sent: false, error: err.message };
+  }
+}
+
+// 发送告警消息 (优先用飞书 API)
 async function sendAlert(agentId: string, message: string) {
+  // 先尝试飞书 API
+  const feishuResult = await sendAlertViaFeishu(agentId, message);
+  if (feishuResult.sent) {
+    return feishuResult;
+  }
+  
+  // 失败则尝试 Gateway (作为备用)
+  console.log(`[ALERT] Feishu failed, trying Gateway for ${agentId}: ${message}`);
   const gateway = getGatewayConfig();
   const sessionKey = `agent:${agentId}:main`;
   
   try {
-    // Fire and forget - 不等待响应
     fetch(`http://127.0.0.1:${gateway.port}/v1/chat/completions`, {
       method: "POST",
       headers: {
@@ -62,21 +199,11 @@ async function sendAlert(agentId: string, message: string) {
       },
       body: JSON.stringify({
         session: sessionKey,
-        messages: [
-          { role: "user", content: `🔔 告警通知: ${message}` }
-        ],
+        messages: [{ role: "user", content: `🔔 告警通知: ${message}` }],
       }),
-    }).then(resp => {
-      if (resp.ok) {
-        console.log(`[ALERT] Sent to ${agentId}: ${message}`);
-      }
-    }).catch(err => {
-      console.error(`[ALERT] Error sending to ${agentId}:`, err.message);
-    });
-    
+    }).catch(() => {});
     return { sent: true, message };
   } catch (err: any) {
-    console.error(`[ALERT] Error sending to ${agentId}:`, err.message);
     return { sent: false, error: err.message };
   }
 }
