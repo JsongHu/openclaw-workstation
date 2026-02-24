@@ -254,7 +254,7 @@ function AgentStatusBadge({ state, t }: { state?: string; t: TFunc }) {
   const c = config[state || "offline"] || config.offline;
   return (
     <span className={`inline-flex items-center gap-1 text-xs ${c.color}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${c.dot} ${c.pulse ? "animate-pulse" : ""}`} />
+      <span className={`w-2.5 h-2.5 rounded-full ${c.dot} ${c.pulse ? "animate-pulse" : ""}`} />
       {c.text}
     </span>
   );

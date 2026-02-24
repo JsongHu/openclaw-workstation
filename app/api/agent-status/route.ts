@@ -61,7 +61,7 @@ function getAgentState(agentId: string): AgentStatus {
   let state: AgentState = "offline";
   if (lastActive) {
     const diff = now - lastActive;
-    if (lastAssistantTs && now - lastAssistantTs < 2 * 60 * 1000) {
+    if (lastAssistantTs && now - lastAssistantTs < 3 * 60 * 1000) {
       state = "working";
     } else if (diff < 10 * 60 * 1000) {
       state = "online";
