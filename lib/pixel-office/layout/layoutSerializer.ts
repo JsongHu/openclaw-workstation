@@ -449,8 +449,11 @@ export function getInteractionPoints(
   }
 
   // Photograph interaction points — idle characters can stop to admire it (row 1, facing up)
-  for (let c = 12; c <= 16; c++) {
+  // Avoid cols 15-16 which overlap with whiteboard-r interaction points
+  // Duplicate points to increase weight in the random selection pool
+  for (let c = 12; c <= 14; c++) {
     if (isWalkable(c, 1, tileMap, blockedTiles)) {
+      points.push({ col: c, row: 1, facingDir: Direction.UP, furnitureType: 'photograph' })
       points.push({ col: c, row: 1, facingDir: Direction.UP, furnitureType: 'photograph' })
     }
   }

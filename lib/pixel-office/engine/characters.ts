@@ -95,6 +95,8 @@ export function createCharacter(
     interactionTarget: null,
     isCat: false,
     codeSnippets: [],
+    photoComments: [],
+    isViewingPhoto: false,
   }
 }
 
@@ -199,7 +201,7 @@ export function updateCharacter(
               ch.state = CharacterState.WALK
               ch.frame = 0
               ch.frameTimer = 0
-              ch.interactionTarget = { col: ip.col, row: ip.row, facingDir: ip.facingDir }
+              ch.interactionTarget = { col: ip.col, row: ip.row, facingDir: ip.facingDir, furnitureType: ip.furnitureType }
               ch.wanderCount++
               ch.wanderTimer = randomRange(WANDER_PAUSE_MIN_SEC, WANDER_PAUSE_MAX_SEC)
               break
@@ -257,7 +259,12 @@ export function updateCharacter(
               ch.tileRow === ch.interactionTarget.row) {
             ch.dir = ch.interactionTarget.facingDir
             ch.state = CharacterState.IDLE
-            ch.wanderTimer = randomRange(INTERACTION_STAY_MIN_SEC, INTERACTION_STAY_MAX_SEC)
+            const stayTime = randomRange(INTERACTION_STAY_MIN_SEC, INTERACTION_STAY_MAX_SEC)
+            ch.wanderTimer = stayTime
+            // Show photo comments when visiting the photograph
+            if (ch.interactionTarget.furnitureType === 'photograph') {
+              ch.isViewingPhoto = true
+            }
             ch.interactionTarget = null
             // Don't count toward wanderCount — interaction is a bonus
             ch.frame = 0

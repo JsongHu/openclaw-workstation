@@ -31,6 +31,8 @@ import { getCatalogEntry, getOnStateType } from '../layout/furnitureCatalog'
 
 const CODE_SNIPPET_LIFETIME = 2.5 // seconds
 const CODE_SNIPPET_SPAWN_RATE = 0.6 // per second
+const PHOTO_COMMENT_LIFETIME = 2.0 // seconds
+const PHOTO_COMMENT_SPAWN_RATE = 2.5 // per second
 const CODE_SNIPPETS = [
   // JS/TS
   'if (...)', 'else {', 'for (...)', 'return', 'async', 'await', 'try {', 'catch', 'import',
@@ -63,6 +65,16 @@ const CODE_SNIPPETS = [
   'openclaw status', 'openclaw gateway start', 'openclaw gateway restart',
   'openclaw logs', 'openclaw doctor', 'openclaw config get',
   'openclaw message send', 'openclaw skills', 'openclaw models', 'openclaw update',
+]
+
+const PHOTO_COMMENTS = [
+  '毒！', '毒德大学', '德味！', '刀锐奶化', '空气切割感',
+  '氛围感拉满', '这光太绝了', '构图教科书', '色彩太舒服了', '学习了',
+  '出片了！', '壁纸级', '大片既视感', '这质感绝了', '奶油焦外',
+  '焦段选得好', '拍出了情绪', '太有电影感了',
+  '德味、毒、大师、学习了！！！', '德味、毒、大师、学习了！！！', '德味、毒、大师、学习了！！！',
+  '德味、毒、大师、学习了！！！', '德味、毒、大师、学习了！！！',
+  '不愧是中国布列松', '这是决定性瞬间！！！', '这个复杂构图绝了！',
 ]
 
 export class OfficeState {
@@ -735,6 +747,30 @@ export class OfficeState {
           ch.bubbleType = null
           ch.bubbleTimer = 0
         }
+      }
+
+      // Photo comment particles for characters viewing the photograph
+      if (ch.isViewingPhoto && ch.state === CharacterState.IDLE && !ch.isCat) {
+        for (const pc of ch.photoComments) pc.age += dt
+        ch.photoComments = ch.photoComments.filter(pc => pc.age < PHOTO_COMMENT_LIFETIME)
+        if (ch.photoComments.length < 2 && Math.random() < dt * PHOTO_COMMENT_SPAWN_RATE) {
+          ch.photoComments.push({
+            text: PHOTO_COMMENTS[Math.floor(Math.random() * PHOTO_COMMENTS.length)],
+            age: 0,
+            x: (Math.random() - 0.5) * 16,
+          })
+        }
+        // Spawn first one immediately
+        if (ch.photoComments.length === 0) {
+          ch.photoComments.push({
+            text: PHOTO_COMMENTS[Math.floor(Math.random() * PHOTO_COMMENTS.length)],
+            age: 0,
+            x: (Math.random() - 0.5) * 16,
+          })
+        }
+      } else {
+        ch.isViewingPhoto = false
+        ch.photoComments = []
       }
 
       // Code snippet particles for working characters

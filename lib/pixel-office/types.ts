@@ -197,7 +197,9 @@ export interface Character {
   matrixEffect: 'spawn' | 'despawn' | null
   matrixEffectTimer: number
   matrixEffectSeeds: number[]
-  interactionTarget: { col: number; row: number; facingDir: Direction } | null
+  interactionTarget: { col: number; row: number; facingDir: Direction; furnitureType?: string } | null
   isCat: boolean
   codeSnippets: Array<{ text: string; age: number; x: number; y: number }>
+  photoComments: Array<{ text: string; age: number; x: number }>
+  isViewingPhoto: boolean
 }

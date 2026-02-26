@@ -733,6 +733,68 @@ export function renderBubbles(
   }
 }
 
+export function renderPhotoComments(
+  ctx: CanvasRenderingContext2D,
+  characters: Character[],
+  offsetX: number,
+  offsetY: number,
+  zoom: number,
+): void {
+  const lifetime = 2.0
+  for (const ch of characters) {
+    if (ch.photoComments.length === 0) continue
+    const sittingOff = ch.state === CharacterState.TYPE ? BUBBLE_SITTING_OFFSET_PX : 0
+    const anchorX = Math.round(offsetX + ch.x * zoom)
+    const anchorY = Math.round(offsetY + (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom)
+    const fontSize = Math.max(10, Math.round(4 * zoom))
+
+    ctx.save()
+    ctx.font = `bold ${fontSize}px sans-serif`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'bottom'
+
+    for (const pc of ch.photoComments) {
+      const progress = pc.age / lifetime
+      let alpha = 1.0
+      if (pc.age < 0.2) alpha = pc.age / 0.2
+      if (progress > 0.7) alpha = (1 - progress) / 0.3
+      const floatY = pc.age * 10 * zoom
+      const baseX = anchorX + pc.x * zoom
+      const baseY = anchorY - floatY
+
+      ctx.globalAlpha = alpha * 0.95
+      const tw = ctx.measureText(pc.text).width
+      const px = 4 * (zoom / 3)
+      const py = 2 * (zoom / 3)
+      const rx = baseX - tw / 2 - px
+      const ry = baseY - fontSize - py * 2
+      const rw = tw + px * 2
+      const rh = fontSize + py * 2
+      const cr = 4
+
+      // Background pill
+      ctx.fillStyle = 'rgba(0,0,0,0.8)'
+      ctx.beginPath()
+      ctx.moveTo(rx + cr, ry)
+      ctx.lineTo(rx + rw - cr, ry)
+      ctx.quadraticCurveTo(rx + rw, ry, rx + rw, ry + cr)
+      ctx.lineTo(rx + rw, ry + rh - cr)
+      ctx.quadraticCurveTo(rx + rw, ry + rh, rx + rw - cr, ry + rh)
+      ctx.lineTo(rx + cr, ry + rh)
+      ctx.quadraticCurveTo(rx, ry + rh, rx, ry + rh - cr)
+      ctx.lineTo(rx, ry + cr)
+      ctx.quadraticCurveTo(rx, ry, rx + cr, ry)
+      ctx.closePath()
+      ctx.fill()
+
+      // Text
+      ctx.fillStyle = '#FFD700'
+      ctx.fillText(pc.text, baseX, baseY - py)
+    }
+    ctx.restore()
+  }
+}
+
 export interface ButtonBounds {
   /** Center X in device pixels */
   cx: number
@@ -831,6 +893,9 @@ export function renderFrame(
 
   // Speech bubbles (always on top of characters)
   renderBubbles(ctx, characters, offsetX, offsetY, zoom)
+
+  // Photo comment bubbles (idle characters admiring the photograph)
+  renderPhotoComments(ctx, characters, offsetX, offsetY, zoom)
 
   // Editor overlays
   if (editor) {
