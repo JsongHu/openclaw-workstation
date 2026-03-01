@@ -43,9 +43,13 @@ export function GatewayStatus() {
         href={health?.ok && health.webUrl ? resolveGatewayUrl(health.webUrl) : undefined}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-cyan-500/20 text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/30 transition-colors cursor-pointer"
+        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border hover:bg-cyan-500/30 transition-colors cursor-pointer ${
+          health?.ok
+            ? "bg-cyan-500/25 text-cyan-200 border-cyan-400/45 animate-pulse"
+            : "bg-cyan-500/20 text-cyan-300 border-cyan-500/30"
+        }`}
       >
-        🌐 Gateway
+        🦞 Gateway
         <span className="opacity-50 text-[10px]">↗</span>
       </a>
       {!health ? (
