@@ -20,13 +20,20 @@ const NAV_ITEMS = [
     ],
   },
   {
+    group: "nav.diary",
+    collapsible: true,
+    items: [
+      { href: "/diary", icon: "📔", labelKey: "nav.diary" },
+    ],
+  },
+  {
     group: "nav.stocks",
     collapsible: true,
     items: [
       { href: "/stocks", icon: "📈", labelKey: "nav.stocks" },
       { href: "/portfolio", icon: "💰", labelKey: "nav.portfolio" },
       { href: "/funds", icon: "🪙", labelKey: "nav.funds" },
-      { href: "/stocks/diary", icon: "📔", labelKey: "nav.diary" },
+      { href: "/stocks/diary", icon: "📈", labelKey: "nav.financeDiary" },
     ],
   },
 ];
@@ -40,6 +47,7 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [stocksCollapsed, setStocksCollapsed] = useState(false);
   const [monitorCollapsed, setMonitorCollapsed] = useState(false);
+  const [diaryCollapsed, setDiaryCollapsed] = useState(false);
   const [logoCarry, setLogoCarry] = useState<{ active: boolean; dx: number; dy: number; angle: number; hidden: boolean }>({
     active: false,
     dx: 0,
@@ -175,7 +183,8 @@ export function Sidebar() {
             {NAV_ITEMS.map((group) => {
               const isCollapsed =
                 (group.group === "nav.stocks" && stocksCollapsed) ||
-                (group.group === "nav.monitor" && monitorCollapsed);
+                (group.group === "nav.monitor" && monitorCollapsed) ||
+                (group.group === "nav.diary" && diaryCollapsed);
               
               return (
               <div key={group.group}>
@@ -187,6 +196,7 @@ export function Sidebar() {
                         onClick={() => {
                           if (group.group === "nav.stocks") setStocksCollapsed(!stocksCollapsed);
                           if (group.group === "nav.monitor") setMonitorCollapsed(!monitorCollapsed);
+                          if (group.group === "nav.diary") setDiaryCollapsed(!diaryCollapsed);
                         }}
                         className="text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
                         title={isCollapsed ? "展开" : "折叠"}

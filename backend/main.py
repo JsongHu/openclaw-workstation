@@ -3,7 +3,7 @@
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import stocks, portfolio, recommendations, funds, diary
+from app.api import stocks, portfolio, recommendations, funds, diary, diary_agents
 from app.services.collector import StockCollector, FundCollector
 from app.services.analyzer import QuantitativeAnalyzer
 from app.services.scheduler import start_scheduler
@@ -42,6 +42,7 @@ app.include_router(portfolio.router, prefix="/api/portfolio", tags=["持仓"])
 app.include_router(recommendations.router, prefix="/api/recommendations", tags=["推荐"])
 app.include_router(funds.router, prefix="/api/funds", tags=["基金"])
 app.include_router(diary.router, prefix="/api/diary", tags=["日记"])
+app.include_router(diary_agents.router, prefix="/api/diary-agents", tags=["日记聚合"])
 
 @app.get("/")
 def root():
