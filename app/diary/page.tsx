@@ -58,7 +58,7 @@ export default function DiaryPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">📔 工作日记</h1>
+      <h1 className="text-2xl font-bold mb-6 text-[var(--text)]">📔 工作日记</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {agents.map((item) => (
