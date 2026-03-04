@@ -6,42 +6,40 @@ import { usePathname } from "next/navigation";
 import { useI18n, LanguageSwitcher } from "@/lib/i18n";
 import { ThemeSwitcher } from "@/lib/theme";
 
-const BUGS_ENABLED_KEY = "pixel-office-bugs-enabled";
-const BUGS_COUNT_KEY = "pixel-office-bugs-count";
-const BUGS_MAX = 400;
-
 const NAV_ITEMS = [
   {
-    group: "nav.overview",
+    group: "nav.stocks",
+    collapsible: true,
     items: [
-      { href: "/", icon: "🤖", labelKey: "nav.agents" },
-      { href: "/models", icon: "🧠", labelKey: "nav.models" },
+      { href: "/stocks", icon: "📈", labelKey: "nav.stocks" },
+      { href: "/portfolio", icon: "💰", labelKey: "nav.portfolio" },
+      { href: "/funds", icon: "🪙", labelKey: "nav.funds" },
+      { href: "/stocks/diary", icon: "📔", labelKey: "nav.diary" },
     ],
   },
   {
     group: "nav.monitor",
+    collapsible: true,
     items: [
+      { href: "/agents", icon: "🤖", labelKey: "nav.agents" },
+      { href: "/models", icon: "🧠", labelKey: "nav.models" },
       { href: "/sessions", icon: "💬", labelKey: "nav.sessions" },
       { href: "/stats", icon: "📊", labelKey: "nav.stats" },
       { href: "/alerts", icon: "🔔", labelKey: "nav.alerts" },
-      { href: "/pixel-office", icon: "🎮", labelKey: "nav.pixelOffice" },
-    ],
-  },
-  {
-    group: "nav.config",
-    items: [
       { href: "/skills", icon: "🧩", labelKey: "nav.skills" },
     ],
   },
 ];
 
+// Pixel Office 作为独立一级菜单（不带分组标题）
+const PIXEL_OFFICE_ITEM = { href: "/pixel-office", icon: "🎮", labelKey: "nav.pixelOffice" };
+
 export function Sidebar() {
   const pathname = usePathname();
   const { t } = useI18n();
   const [collapsed, setCollapsed] = useState(false);
-  const [experimentOpen, setExperimentOpen] = useState(false);
-  const [bugsEnabled, setBugsEnabled] = useState(false);
-  const [bugsCount, setBugsCount] = useState(5);
+  const [stocksCollapsed, setStocksCollapsed] = useState(false);
+  const [monitorCollapsed, setMonitorCollapsed] = useState(false);
   const [logoCarry, setLogoCarry] = useState<{ active: boolean; dx: number; dy: number; angle: number; hidden: boolean }>({
     active: false,
     dx: 0,
@@ -69,36 +67,27 @@ export function Sidebar() {
     };
   }, []);
 
-  useEffect(() => {
-    const syncFromStorage = () => {
-      const enabled = localStorage.getItem(BUGS_ENABLED_KEY) === "true";
-      const raw = Number(localStorage.getItem(BUGS_COUNT_KEY) || "5");
-      const count = Math.max(0, Math.min(BUGS_MAX, Number.isFinite(raw) ? raw : 5));
-      setBugsEnabled(enabled);
-      setBugsCount(count);
-    };
-    syncFromStorage();
-    window.addEventListener("storage", syncFromStorage);
-    window.addEventListener("openclaw-bugs-config-change", syncFromStorage as EventListener);
-    return () => {
-      window.removeEventListener("storage", syncFromStorage);
-      window.removeEventListener("openclaw-bugs-config-change", syncFromStorage as EventListener);
-    };
-  }, []);
-
-  const toggleBugs = () => {
-    const next = !bugsEnabled;
-    setBugsEnabled(next);
-    localStorage.setItem(BUGS_ENABLED_KEY, String(next));
-    window.dispatchEvent(new CustomEvent("openclaw-bugs-config-change"));
-  };
-
-  const onBugCountChange = (nextCount: number) => {
-    const clamped = Math.max(0, Math.min(BUGS_MAX, nextCount));
-    setBugsCount(clamped);
-    localStorage.setItem(BUGS_COUNT_KEY, String(clamped));
-    window.dispatchEvent(new CustomEvent("openclaw-bugs-config-change"));
-  };
+  // 渲染单个菜单项
+  const renderNavItem = (item: typeof PIXEL_OFFICE_ITEM, isActive: boolean) => (
+    <Link
+      key={item.href}
+      href={item.href}
+      title={collapsed ? t(item.labelKey) : undefined}
+      className={`flex items-center rounded-lg text-sm transition-colors ${
+        isActive
+          ? "bg-[var(--accent)]/15 text-[var(--accent)] font-medium"
+          : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg)]"
+      }`}
+      style={{
+        padding: collapsed ? "8px 0" : "8px 12px",
+        justifyContent: collapsed ? "center" : "flex-start",
+        gap: collapsed ? 0 : 10,
+      }}
+    >
+      <span className="text-base">{item.icon}</span>
+      {!collapsed && t(item.labelKey)}
+    </Link>
+  );
 
   return (
     <>
@@ -110,7 +99,7 @@ export function Sidebar() {
         <div className="border-b border-[var(--border)]" style={{ padding: collapsed ? "16px 0" : "16px 20px" }}>
           {collapsed ? (
             <div className="flex flex-col items-center gap-2">
-              <Link href="/">
+              <Link href="/pixel-office">
                 <span
                   className="relative inline-block transition-opacity duration-300"
                   style={{
@@ -134,7 +123,7 @@ export function Sidebar() {
           ) : (
             <div>
               <div className="flex items-center justify-between">
-                <Link href="/" className="flex items-center gap-2">
+                <Link href="/pixel-office" className="flex items-center gap-2">
                   <span
                     className="relative inline-block transition-opacity duration-300"
                     style={{
@@ -148,7 +137,7 @@ export function Sidebar() {
                   </span>
                   <div>
                     <div className="text-sm font-bold text-[var(--text)] tracking-wide">OPENCLAW</div>
-                    <div className="text-[10px] text-[var(--text-muted)] tracking-wider">BOT DASHBOARD</div>
+                    <div className="text-[10px] text-[var(--text-muted)] tracking-wider">WORKSTATION</div>
                   </div>
                 </Link>
                 <button
@@ -170,100 +159,56 @@ export function Sidebar() {
         {/* Nav groups */}
         <nav className="sidebar-nav" style={{ padding: collapsed ? "16px 8px" : "16px 12px" }}>
           <div className="space-y-5">
-            {NAV_ITEMS.map((group) => (
+            {/* 像素办公室 - 独立一级菜单，不带分组标题 */}
+            {!collapsed && (
+              <div className="space-y-0.5">
+                {renderNavItem(PIXEL_OFFICE_ITEM, pathname === PIXEL_OFFICE_ITEM.href)}
+              </div>
+            )}
+            {collapsed && (
+              <div className="space-y-0.5">
+                {renderNavItem(PIXEL_OFFICE_ITEM, pathname === PIXEL_OFFICE_ITEM.href)}
+              </div>
+            )}
+
+            {/* 其他分组 */}
+            {NAV_ITEMS.map((group) => {
+              const isCollapsed =
+                (group.group === "nav.stocks" && stocksCollapsed) ||
+                (group.group === "nav.monitor" && monitorCollapsed);
+              
+              return (
               <div key={group.group}>
                 {!collapsed && (
-                  <div className="px-2 mb-2 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider flex items-center justify-between">
+                  <div className="px-2 mb-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider flex items-center justify-between">
                     {t(group.group)}
-                    <span className="text-[var(--text-muted)] opacity-40">—</span>
+                    {group.collapsible && (
+                      <button 
+                        onClick={() => {
+                          if (group.group === "nav.stocks") setStocksCollapsed(!stocksCollapsed);
+                          if (group.group === "nav.monitor") setMonitorCollapsed(!monitorCollapsed);
+                        }}
+                        className="text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+                        title={isCollapsed ? "展开" : "折叠"}
+                      >
+                        <span className={`transition-transform ${isCollapsed ? '' : 'rotate-180'}`}>▼</span>
+                      </button>
+                    )}
                   </div>
                 )}
                 <div className="space-y-0.5">
                   {group.items.map((item) => {
+                    // Skip rendering if this item is in a collapsed group
+                    if (group.collapsible && isCollapsed) {
+                      return null;
+                    }
                     const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        title={collapsed ? t(item.labelKey) : undefined}
-                        className={`flex items-center rounded-lg text-sm transition-colors ${
-                          active
-                            ? "bg-[var(--accent)]/15 text-[var(--accent)] font-medium"
-                            : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg)]"
-                        }`}
-                        style={{
-                          padding: collapsed ? "8px 0" : "8px 12px",
-                          justifyContent: collapsed ? "center" : "flex-start",
-                          gap: collapsed ? 0 : 10,
-                        }}
-                      >
-                        <span className="text-base">{item.icon}</span>
-                        {!collapsed && t(item.labelKey)}
-                      </Link>
-                    );
+                    return renderNavItem(item, active);
                   })}
                 </div>
               </div>
-            ))}
-            {!collapsed && (
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--card)]/65 p-1">
-                <button
-                  onClick={() => setExperimentOpen((v) => !v)}
-                  className={`w-full flex items-center justify-between rounded-lg px-3 py-2 transition-colors ${
-                    experimentOpen
-                      ? "bg-[var(--accent)]/12 text-[var(--accent)] border border-[var(--accent)]/35"
-                      : "bg-[var(--bg)] text-[var(--text)] border border-[var(--border)] hover:bg-[var(--accent)]/8"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <span className="text-sm">🧪</span>
-                    <span className="text-sm font-semibold tracking-wide">实验功能</span>
-                  </span>
-                  <span
-                    className={`inline-flex items-center justify-center text-base leading-none transition-transform ${
-                      experimentOpen ? "text-[var(--accent)] rotate-180" : "text-[var(--text-muted)]"
-                    }`}
-                  >
-                    ⌄
-                  </span>
-                </button>
-                {experimentOpen && (
-                  <div className="mt-2 space-y-2 rounded-lg border border-[var(--border)] bg-[var(--card)] p-2">
-                    <button
-                      onClick={toggleBugs}
-                      className={`w-full px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                        bugsEnabled
-                          ? "bg-[var(--accent)]/10 border-[var(--accent)]/30 text-[var(--accent)]"
-                          : "bg-[var(--card)] border-[var(--border)] text-[var(--text-muted)]"
-                      }`}
-                    >
-                      {bugsEnabled ? "🐛 Bugs On" : "🐛 Bugs Off"}
-                    </button>
-                    <label className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs rounded-lg border bg-[var(--card)] border-[var(--border)] text-[var(--text-muted)]">
-                      <span>Count {bugsCount}</span>
-                      <input
-                        type="range"
-                        min={0}
-                        max={BUGS_MAX}
-                        step={1}
-                        value={bugsCount}
-                        onChange={(e) => onBugCountChange(Number(e.target.value))}
-                        className="w-24 accent-[var(--accent)]"
-                      />
-                    </label>
-                  </div>
-                )}
-              </div>
-            )}
-            {collapsed && (
-              <button
-                onClick={() => setCollapsed(false)}
-                title="实验功能"
-                className="w-full flex items-center justify-center rounded-lg px-2 py-2 text-base border border-[var(--border)] bg-[var(--card)]/65 text-[var(--text)] hover:bg-[var(--bg)] transition-colors"
-              >
-                🧪
-              </button>
-            )}
+              );
+            })}
           </div>
         </nav>
       </aside>

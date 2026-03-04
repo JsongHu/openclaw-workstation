@@ -7,13 +7,18 @@ export type Locale = "zh" | "en";
 const translations: Record<Locale, Record<string, string>> = {
   zh: {
     // layout
-    "site.title": "OpenClaw Bot Dashboard",
-    "site.desc": "查看所有 OpenClaw 机器人配置",
+    "site.title": "OpenClaw Workstation",
+    "site.desc": "OpenClaw 工作站",
 
     // nav sidebar
     "nav.overview": "总览",
     "nav.agents": "机器人",
     "nav.models": "模型列表",
+    "nav.stocks": "股票系统",
+    "nav.stockRecommend": "股票推荐",
+    "nav.portfolio": "持仓管理",
+    "nav.funds": "基金持仓",
+    "nav.diary": "理财日记",
     "nav.monitor": "监控",
     "nav.sessions": "会话列表",
     "nav.stats": "消息统计",
@@ -53,7 +58,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "common.minutes": "分钟",
 
     // home page
-    "home.title": "🐾 OpenClaw Bot Dashboard",
+    "home.title": "🐾 OpenClaw Workstation",
     "home.agentCount": "个机器人",
     "home.pageTitle": "OpenClaw 机器人",
     "home.defaultModel": "默认模型",
@@ -239,13 +244,18 @@ const translations: Record<Locale, Record<string, string>> = {
   },
   en: {
     // layout
-    "site.title": "OpenClaw Bot Dashboard",
-    "site.desc": "View all OpenClaw bot configurations",
+    "site.title": "OpenClaw Workstation",
+    "site.desc": "OpenClaw Workstation",
 
     // nav sidebar
     "nav.overview": "Overview",
     "nav.agents": "Bots",
     "nav.models": "Models",
+    "nav.stocks": "Stock System",
+    "nav.stockRecommend": "Stock Picks",
+    "nav.portfolio": "Portfolio",
+    "nav.funds": "Funds",
+    "nav.diary": "Diary",
     "nav.monitor": "Monitor",
     "nav.sessions": "Sessions",
     "nav.stats": "Statistics",
@@ -285,7 +295,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "common.minutes": "minutes",
 
     // home page
-    "home.title": "🐾 OpenClaw Bot Dashboard",
+    "home.title": "🐾 OpenClaw Workstation",
     "home.agentCount": "bots",
     "home.pageTitle": "OpenClaw Bots",
     "home.defaultModel": "Default model",

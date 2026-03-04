@@ -3,3 +3,24 @@ node_modules
 *.tsbuildinfo
 next-env.d.ts
 .idea
+
+# Python virtualenv
+backend/venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Memory data
+memory/diary/
+memory/*.sqlite
+*.sqlite
+
+# Backend
+backend/venv/
+backend/stock_system.db
+backend/backend.log
+__pycache__/
+*.pyc

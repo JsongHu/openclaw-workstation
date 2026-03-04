@@ -3,11 +3,9 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { Sidebar } from "./sidebar";
 import { AlertMonitor } from "./alert-monitor";
-import { GlobalBugsOverlay } from "./global-bugs-overlay";
-
 export const metadata: Metadata = {
-  title: "OpenClaw Bot Dashboard",
-  description: "查看所有 OpenClaw 机器人配置",
+  title: "OpenClaw Workstation",
+  description: "OpenClaw 工作站",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -16,7 +14,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Providers>
           <AlertMonitor />
-          <GlobalBugsOverlay />
           <div className="flex min-h-screen">
             <Sidebar />
             <main className="flex-1 overflow-auto">{children}</main>
