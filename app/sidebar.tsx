@@ -8,16 +8,6 @@ import { ThemeSwitcher } from "@/lib/theme";
 
 const NAV_ITEMS = [
   {
-    group: "nav.stocks",
-    collapsible: true,
-    items: [
-      { href: "/stocks", icon: "📈", labelKey: "nav.stocks" },
-      { href: "/portfolio", icon: "💰", labelKey: "nav.portfolio" },
-      { href: "/funds", icon: "🪙", labelKey: "nav.funds" },
-      { href: "/stocks/diary", icon: "📔", labelKey: "nav.diary" },
-    ],
-  },
-  {
     group: "nav.monitor",
     collapsible: true,
     items: [
@@ -27,6 +17,16 @@ const NAV_ITEMS = [
       { href: "/stats", icon: "📊", labelKey: "nav.stats" },
       { href: "/alerts", icon: "🔔", labelKey: "nav.alerts" },
       { href: "/skills", icon: "🧩", labelKey: "nav.skills" },
+    ],
+  },
+  {
+    group: "nav.stocks",
+    collapsible: true,
+    items: [
+      { href: "/stocks", icon: "📈", labelKey: "nav.stocks" },
+      { href: "/portfolio", icon: "💰", labelKey: "nav.portfolio" },
+      { href: "/funds", icon: "🪙", labelKey: "nav.funds" },
+      { href: "/stocks/diary", icon: "📔", labelKey: "nav.diary" },
     ],
   },
 ];
