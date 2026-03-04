@@ -74,13 +74,11 @@ export default function PortfolioPage() {
     setError(null);
     setLoading(true);
     try {
-      // 暂时使用相同的API，但可以通过owner参数区分（后端未支持前暂用本地模拟）
-      const res = await fetch("/api/portfolio/summary");
+      // 根据 owner 参数获取持仓数据
+      const res = await fetch(`/api/portfolio/summary?owner=${encodeURIComponent(owner)}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       
-      // TODO: 后端支持后，根据 owner 参数过滤数据
-      // 临时：显示所有数据（后端未区分前）
       // 获取账户余额
       let balance = 0;
       try {
@@ -155,7 +153,7 @@ export default function PortfolioPage() {
 
   // 添加单条持仓
   const handleAddPosition = async () => {
-    if (!formData.stock_code || !formData.shares || !formData.avg_cost) {
+    if (!selectedStock || !formData.shares || !formData.avg_cost) {
       alert("请填写完整信息");
       return;
     }
@@ -166,8 +164,8 @@ export default function PortfolioPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          stock_code: formData.stock_code,
-          stock_name: formData.stock_name,
+          stock_id: selectedStock.id,
+          owner: owner,
           shares: parseInt(formData.shares),
           avg_cost: parseFloat(formData.avg_cost),
         }),
@@ -202,27 +200,25 @@ export default function PortfolioPage() {
     try {
       // 逐条添加
       for (const item of validData) {
-        // 先搜索股票获取代码
+        // 先搜索股票获取ID
         const searchRes = await fetch(`/api/stocks?q=${encodeURIComponent(item.stock_name)}&limit=1`);
-        let stockCode = "";
-        let stockName = item.stock_name;
+        let stockId = 0;
         
         if (searchRes.ok) {
           const searchData = await searchRes.json();
           const items = searchData.items || searchData || [];
           if (items.length > 0) {
-            stockCode = items[0].code;
-            stockName = items[0].name;
+            stockId = items[0].id;
           }
         }
         
-        if (stockCode) {
+        if (stockId) {
           await fetch("/api/portfolio", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              stock_code: stockCode,
-              stock_name: stockName,
+              stock_id: stockId,
+              owner: owner,
               shares: parseInt(item.shares),
               avg_cost: parseFloat(item.avg_cost),
             }),

@@ -20,6 +20,7 @@ def get_db():
 # Pydantic 模型
 class PortfolioBase(BaseModel):
     stock_id: int
+    owner: str = "小猫"  # 持仓人
     shares: float = 0
     avg_cost: Optional[float] = None
     target_price: Optional[float] = None
@@ -47,15 +48,16 @@ class PortfolioResponse(PortfolioBase):
 
 # API 端点
 @router.get("/portfolio", response_model=List[PortfolioResponse])
-def list_portfolio(db: Session = Depends(get_db)):
-    """获取所有持仓"""
-    positions = db.query(Portfolio).all()
+def list_portfolio(owner: str = "小猫", db: Session = Depends(get_db)):
+    """获取指定持仓人的持仓"""
+    positions = db.query(Portfolio).filter(Portfolio.owner == owner).all()
     result = []
     for p in positions:
         stock = db.query(Stock).filter(Stock.id == p.stock_id).first()
         p_dict = {
             "id": p.id,
             "stock_id": p.stock_id,
+            "owner": p.owner,
             "shares": p.shares,
             "avg_cost": p.avg_cost,
             "target_price": p.target_price,
@@ -81,6 +83,7 @@ def create_portfolio(portfolio: PortfolioCreate, db: Session = Depends(get_db)):
     return {
         "id": db_portfolio.id,
         "stock_id": db_portfolio.stock_id,
+        "owner": db_portfolio.owner,
         "shares": db_portfolio.shares,
         "avg_cost": db_portfolio.avg_cost,
         "target_price": db_portfolio.target_price,
@@ -118,9 +121,9 @@ def delete_portfolio(portfolio_id: int, db: Session = Depends(get_db)):
     return {"message": "Portfolio deleted successfully"}
 
 @router.get("/portfolio/summary")
-def get_portfolio_summary(db: Session = Depends(get_db)):
-    """获取持仓汇总"""
-    positions = db.query(Portfolio).all()
+def get_portfolio_summary(owner: str = "小猫", db: Session = Depends(get_db)):
+    """获取指定持仓人的持仓汇总"""
+    positions = db.query(Portfolio).filter(Portfolio.owner == owner).all()
     
     total_cost = 0
     total_value = 0
@@ -145,6 +148,8 @@ def get_portfolio_summary(db: Session = Depends(get_db)):
             total_value += value
             
             positions_with_price.append({
+                "id": p.id,
+                "stock_id": p.stock_id,
                 "stock_code": stock.code,
                 "stock_name": stock.name,
                 "shares": p.shares,

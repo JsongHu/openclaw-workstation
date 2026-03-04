@@ -88,6 +88,7 @@ class Portfolio(Base):
     
     id = Column(Integer, primary_key=True)
     stock_id = Column(Integer, ForeignKey("stocks.id"))
+    owner = Column(String(50), nullable=False, default="小猫")  # 持仓人：小猫、松
     shares = Column(Float, default=0)
     avg_cost = Column(Float)
     target_price = Column(Float)
@@ -97,6 +98,10 @@ class Portfolio(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     stock = relationship("Stock", back_populates="portfolio")
+
+    __table_args__ = (
+        Index('ix_portfolio_owner', 'owner'),
+    )
 
 class FundPortfolio(Base):
     __tablename__ = "fund_portfolio"
