@@ -154,8 +154,45 @@ export default function DiaryPage() {
 
             {/* 弹窗内容 - MD渲染 */}
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
-              <div className="prose prose-sm dark:prose-invert max-w-none">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <div className="markdown-content">
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({node, ...props}) => <h1 className="text-2xl font-bold mt-6 mb-4 text-[var(--text)]" {...props} />,
+                    h2: ({node, ...props}) => <h2 className="text-xl font-bold mt-5 mb-3 text-[var(--text)]" {...props} />,
+                    h3: ({node, ...props}) => <h3 className="text-lg font-semibold mt-4 mb-2 text-[var(--text)]" {...props} />,
+                    h4: ({node, ...props}) => <h4 className="text-base font-medium mt-3 mb-2 text-[var(--text)]" {...props} />,
+                    p: ({node, ...props}) => <p className="my-2 leading-relaxed text-[var(--text)]" {...props} />,
+                    ul: ({node, ...props}) => <ul className="list-disc list-inside my-2 space-y-1 text-[var(--text)]" {...props} />,
+                    ol: ({node, ...props}) => <ol className="list-decimal list-inside my-2 space-y-1 text-[var(--text)]" {...props} />,
+                    li: ({node, ...props}) => <li className="my-1 text-[var(--text)]" {...props} />,
+                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-[var(--accent)] pl-4 my-4 italic text-[var(--text-muted)] bg-[var(--bg)] py-2 rounded-r" {...props} />,
+                    code: ({node, className, children, ...props}) => {
+                      const match = /language-(\w+)/.exec(className || '');
+                      const isInline = !match && !className;
+                      return isInline ? (
+                        <code className="bg-[var(--bg)] px-1.5 py-0.5 rounded text-sm font-mono text-[var(--accent)]" {...props}>
+                          {children}
+                        </code>
+                      ) : (
+                        <code className={`${className} block bg-[var(--bg)] p-4 rounded-lg my-4 overflow-x-auto text-sm font-mono`} {...props}>
+                          {children}
+                        </code>
+                      );
+                    },
+                    pre: ({node, ...props}) => <pre className="bg-[var(--bg)] p-4 rounded-lg my-4 overflow-x-auto" {...props} />,
+                    a: ({node, ...props}) => <a className="text-[var(--accent)] hover:underline" {...props} />,
+                    strong: ({node, ...props}) => <strong className="font-bold text-[var(--text)]" {...props} />,
+                    em: ({node, ...props}) => <em className="italic text-[var(--text)]" {...props} />,
+                    table: ({node, ...props}) => <div className="overflow-x-auto my-4"><table className="min-w-full border border-[var(--border)] rounded-lg" {...props} /></div>,
+                    thead: ({node, ...props}) => <thead className="bg-[var(--bg)]" {...props} />,
+                    th: ({node, ...props}) => <th className="border-b border-[var(--border)] px-4 py-2 text-left font-semibold text-[var(--text)]" {...props} />,
+                    td: ({node, ...props}) => <td className="border-b border-[var(--border)] px-4 py-2 text-[var(--text)]" {...props} />,
+                    tr: ({node, ...props}) => <tr className="hover:bg-[var(--bg)]" {...props} />,
+                    hr: ({node, ...props}) => <hr className="my-6 border-[var(--border)]" {...props} />,
+                    img: ({node, ...props}) => <img className="max-w-full h-auto rounded-lg my-4" {...props} />,
+                  }}
+                >
                   {selectedEntry.content || "*无内容*"}
                 </ReactMarkdown>
               </div>
